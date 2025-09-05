@@ -22,6 +22,8 @@ kotlin {
 dependencies {
     compileOnly(libs.android.gradleApiPlugin)
     compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.detekt.gradlePlugin)
+    compileOnly(libs.ktlint.gradlePlugin)
 }
 
 tasks {
@@ -39,6 +41,13 @@ gradlePlugin {
                     .get()
                     .pluginId
             implementationClass = "KmpLibraryConventionPlugin"
+        }
+        register("kmpLint") {
+            id =
+                libs.plugins.salvo.kmp.lint
+                    .get()
+                    .pluginId
+            implementationClass = "KmpLintConventionPlugin"
         }
     }
 }
