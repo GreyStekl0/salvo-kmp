@@ -23,12 +23,12 @@ import salvo.composeapp.generated.resources.Res
 import salvo.composeapp.generated.resources.compose_multiplatform
 
 @Composable
-fun App() {
+fun App(modifier: Modifier = Modifier) {
     MaterialTheme {
         var showContent by remember { mutableStateOf(false) }
         Column(
             modifier =
-                Modifier
+                modifier
                     .background(MaterialTheme.colorScheme.primaryContainer)
                     .safeContentPadding()
                     .fillMaxSize(),
