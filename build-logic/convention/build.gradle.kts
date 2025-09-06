@@ -36,6 +36,13 @@ tasks {
 
 gradlePlugin {
     plugins {
+        register("kmpApplication") {
+            id =
+                libs.plugins.salvo.kmp.application
+                    .get()
+                    .pluginId
+            implementationClass = "KmpApplicationConventionPlugin"
+        }
         register("kmpLibrary") {
             id =
                 libs.plugins.salvo.kmp.library
@@ -43,12 +50,12 @@ gradlePlugin {
                     .pluginId
             implementationClass = "KmpLibraryConventionPlugin"
         }
-        register("kmpLint") {
+        register("lint") {
             id =
-                libs.plugins.salvo.kmp.lint
+                libs.plugins.salvo.lint
                     .get()
                     .pluginId
-            implementationClass = "KmpLintConventionPlugin"
+            implementationClass = "LintConventionPlugin"
         }
     }
 }
