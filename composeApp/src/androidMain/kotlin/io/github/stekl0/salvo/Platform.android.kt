@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package io.github.stekl0.salvo
 
 import android.os.Build
