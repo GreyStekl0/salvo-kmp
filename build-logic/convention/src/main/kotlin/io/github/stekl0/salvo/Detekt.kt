@@ -10,6 +10,12 @@ internal fun Project.configureDetekt() {
     extensions.configure<DetektExtension> {
         toolVersion = "1.23.8"
 
+        source.setFrom(
+            "src/commonMain/kotlin",
+            "src/androidMain/kotlin",
+            "src/iosMain/kotlin",
+        )
+
         buildUponDefaultConfig = true
         allRules = false
         parallel = true
