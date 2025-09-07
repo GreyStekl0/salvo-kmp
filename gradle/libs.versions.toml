@@ -15,6 +15,8 @@ detekt = "1.23.8"
 composeRules = "0.4.27"
 composeGradlePlugin = "1.8.2"
 desugarJdk = "2.1.5"
+orbit = "10.0.0"
+metro = "0.6.4"
 
 [libraries]
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
@@ -29,7 +31,10 @@ androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "a
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
-desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdk"}
+desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdk" }
+orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbit" }
+orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbit" }
+orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbit" }
 
 # Compose Rules
 detekt-composeRules = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
@@ -49,6 +54,7 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 android-kotlinMultiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 
@@ -56,3 +62,10 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 salvo-kmp-application = { id = "salvo.kmp.application" }
 salvo-kmp-library = { id = "salvo.kmp.library" }
 salvo-lint = { id = "salvo.lint" }
+
+[bundles]
+orbit = [
+    "orbit-core",
+    "orbit-compose",
+    "orbit-viewmodel"
+]
