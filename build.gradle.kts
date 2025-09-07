@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.composeCompiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
     alias(libs.plugins.android.kotlinMultiplatform.library) apply false
+    alias(libs.plugins.metro) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
 }
