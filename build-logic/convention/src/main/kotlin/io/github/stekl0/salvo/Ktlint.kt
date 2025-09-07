@@ -10,7 +10,6 @@ internal fun Project.configureKtlint() {
         version.set("1.7.1")
 
         reporters {
-            reporter(ReporterType.CHECKSTYLE)
             reporter(ReporterType.SARIF)
         }
 

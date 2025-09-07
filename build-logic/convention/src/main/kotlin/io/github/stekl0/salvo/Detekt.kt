@@ -27,6 +27,10 @@ internal fun Project.configureDetekt() {
 
     tasks.withType<Detekt>().configureEach {
         reports {
+            txt.required.set(false)
+            xml.required.set(false)
+            html.required.set(false)
+            md.required.set(false)
             sarif.required.set(true)
             sarif.outputLocation.set(file("build/reports/detekt/$name.sarif"))
         }
