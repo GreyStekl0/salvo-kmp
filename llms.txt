@@ -1,0 +1,1523 @@
+Directory structure:
+└── greystekl0-salvo-kmp/
+    ├── build.gradle.kts
+    ├── gradle.properties
+    ├── settings.gradle.kts
+    ├── .editorconfig
+    ├── .pre-commit-config.yaml
+    ├── build-logic/
+    │   ├── gradle.properties
+    │   ├── settings.gradle.kts
+    │   └── convention/
+    │       ├── build.gradle.kts
+    │       └── src/
+    │           └── main/
+    │               └── kotlin/
+    │                   ├── KmpApplicationComposeConventionPlugin.kt
+    │                   ├── KmpApplicationConventionPlugin.kt
+    │                   ├── KmpLibraryConventionPlugin.kt
+    │                   ├── LintConventionPlugin.kt
+    │                   └── io/
+    │                       └── github/
+    │                           └── stekl0/
+    │                               └── salvo/
+    │                                   ├── Detekt.kt
+    │                                   ├── Ktlint.kt
+    │                                   └── ProjectExtensions.kt
+    ├── composeApp/
+    │   ├── build.gradle.kts
+    │   └── src/
+    │       ├── androidMain/
+    │       │   ├── AndroidManifest.xml
+    │       │   ├── kotlin/
+    │       │   │   └── io/
+    │       │   │       └── github/
+    │       │   │           └── stekl0/
+    │       │   │               └── salvo/
+    │       │   │                   ├── MainActivity.kt
+    │       │   │                   └── Platform.android.kt
+    │       │   └── res/
+    │       │       ├── drawable/
+    │       │       │   └── ic_launcher_background.xml
+    │       │       ├── drawable-v24/
+    │       │       │   └── ic_launcher_foreground.xml
+    │       │       ├── mipmap-anydpi-v26/
+    │       │       │   ├── ic_launcher.xml
+    │       │       │   └── ic_launcher_round.xml
+    │       │       └── values/
+    │       │           └── strings.xml
+    │       ├── commonMain/
+    │       │   ├── composeResources/
+    │       │   │   └── drawable/
+    │       │   │       └── compose-multiplatform.xml
+    │       │   └── kotlin/
+    │       │       └── io/
+    │       │           └── github/
+    │       │               └── stekl0/
+    │       │                   └── salvo/
+    │       │                       ├── App.kt
+    │       │                       ├── Greeting.kt
+    │       │                       └── Platform.kt
+    │       ├── commonTest/
+    │       │   └── kotlin/
+    │       │       └── io/
+    │       │           └── github/
+    │       │               └── stekl0/
+    │       │                   └── salvo/
+    │       │                       └── ComposeAppCommonTest.kt
+    │       └── iosMain/
+    │           └── kotlin/
+    │               └── io/
+    │                   └── github/
+    │                       └── stekl0/
+    │                           └── salvo/
+    │                               ├── MainViewController.kt
+    │                               └── Platform.ios.kt
+    ├── config/
+    │   └── detekt/
+    │       └── detekt.yml
+    ├── gradle/
+    │   ├── libs.versions.toml
+    │   └── wrapper/
+    │       └── gradle-wrapper.properties
+    ├── iosApp/
+    │   ├── Configuration/
+    │   │   └── Config.xcconfig
+    │   └── iosApp/
+    │       ├── ContentView.swift
+    │       ├── Info.plist
+    │       ├── iOSApp.swift
+    │       ├── Assets.xcassets/
+    │       │   ├── Contents.json
+    │       │   ├── AccentColor.colorset/
+    │       │   │   └── Contents.json
+    │       │   └── AppIcon.appiconset/
+    │       │       └── Contents.json
+    │       └── Preview Content/
+    │           └── Preview Assets.xcassets/
+    │               └── Contents.json
+    └── .github/
+        └── workflows/
+            └── ci.yml
+
+================================================
+FILE: build.gradle.kts
+================================================
+plugins {
+    // this is necessary to avoid the plugins to be loaded multiple times
+    // in each subproject's classloader
+    alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.androidLibrary) apply false
+    alias(libs.plugins.composeMultiplatform) apply false
+    alias(libs.plugins.composeCompiler) apply false
+    alias(libs.plugins.kotlinMultiplatform) apply false
+    alias(libs.plugins.android.kotlinMultiplatform.library) apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ktlint) apply false
+}
+
+
+
+================================================
+FILE: gradle.properties
+================================================
+#Kotlin
+kotlin.code.style=official
+kotlin.daemon.jvmargs=-Xmx3072M
+
+#Gradle
+org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=true
+org.gradle.configuration-cache.parallel=true
+
+#Android
+android.nonTransitiveRClass=true
+android.useAndroidX=true
+
+
+================================================
+FILE: settings.gradle.kts
+================================================
+rootProject.name = "salvo"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+
+pluginManagement {
+    includeBuild("build-logic")
+    repositories {
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
+            }
+        }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google {
+            mavenContent {
+                includeGroupAndSubgroups("androidx")
+                includeGroupAndSubgroups("com.android")
+                includeGroupAndSubgroups("com.google")
+            }
+        }
+        mavenCentral()
+    }
+}
+
+include(":composeApp")
+
+
+
+================================================
+FILE: .editorconfig
+================================================
+# https://editorconfig.org/
+# This configuration is used by ktlint when spotless invokes it
+
+root = true
+
+[*.{kt,kts}]
+ktlint_function_naming_ignore_when_annotated_with = Composable, Test
+
+
+================================================
+FILE: .pre-commit-config.yaml
+================================================
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
+
+
+================================================
+FILE: build-logic/gradle.properties
+================================================
+# Gradle properties are not passed to included builds https://github.com/gradle/gradle/issues/2534
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configureondemand=true
+org.gradle.configuration-cache=true
+org.gradle.configuration-cache.parallel=true
+
+
+
+================================================
+FILE: build-logic/settings.gradle.kts
+================================================
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        gradlePluginPortal()
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+    }
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
+}
+
+rootProject.name = "build-logic"
+include(":convention")
+
+
+
+================================================
+FILE: build-logic/convention/build.gradle.kts
+================================================
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+plugins {
+    `kotlin-dsl`
+}
+
+group = "io.github.stekl0.salvo.buildlogic"
+
+// Configure the build-logic plugins to target JDK 17
+// This matches the JDK used to build the project, and is not related to what is running on device.
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    compileOnly(libs.android.gradleApiPlugin)
+    compileOnly(libs.kotlin.gradlePlugin)
+    compileOnly(libs.detekt.gradlePlugin)
+    compileOnly(libs.ktlint.gradlePlugin)
+    compileOnly(libs.compose.gradlePlugin)
+}
+
+tasks {
+    validatePlugins {
+        enableStricterValidation = true
+        failOnWarning = true
+    }
+}
+
+gradlePlugin {
+    plugins {
+        register("kmpApplication") {
+            id =
+                libs.plugins.salvo.kmp.application
+                    .get()
+                    .pluginId
+            implementationClass = "KmpApplicationConventionPlugin"
+        }
+        register("kmpLibrary") {
+            id =
+                libs.plugins.salvo.kmp.library
+                    .get()
+                    .pluginId
+            implementationClass = "KmpLibraryConventionPlugin"
+        }
+        register("lint") {
+            id =
+                libs.plugins.salvo.lint
+                    .get()
+                    .pluginId
+            implementationClass = "LintConventionPlugin"
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/KmpApplicationComposeConventionPlugin.kt
+================================================
+@file:Suppress("MaxLineLength", "ForbiddenComment")
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+
+class KmpApplicationComposeConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            pluginManager.apply("org.jetbrains.compose")
+            pluginManager.apply("org.jetbrains.kotlin.plugin.compose")
+
+            // TODO: I don’t know how to add a dependency of the form ‘compose.*’ (not from lib.version.toml).
+            //  without them this plugin doesn’t make sense.
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/KmpApplicationConventionPlugin.kt
+================================================
+import com.android.build.api.dsl.ApplicationExtension
+import io.github.stekl0.salvo.libs
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.dependencies
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
+class KmpApplicationConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            pluginManager.apply("org.jetbrains.kotlin.multiplatform")
+            pluginManager.apply("com.android.application")
+            pluginManager.apply("salvo.lint")
+
+            extensions.configure<KotlinMultiplatformExtension> {
+                androidTarget()
+
+                jvmToolchain(17)
+
+                listOf(
+                    iosX64(),
+                    iosArm64(),
+                    iosSimulatorArm64(),
+                ).forEach { iosTarget ->
+                    iosTarget.binaries.framework {
+                        baseName = "ComposeApp"
+                        isStatic = true
+                    }
+                }
+
+                sourceSets.all {
+                    languageSettings.progressiveMode = true
+                }
+            }
+
+            extensions.configure<ApplicationExtension> {
+                namespace = "io.github.stekl0.salvo"
+                compileSdk = 36
+                defaultConfig {
+                    applicationId = "io.github.stekl0.salvo"
+                    minSdk = 24
+                    targetSdk = 36
+                }
+                buildTypes {
+                    release {
+                        isMinifyEnabled = true
+                    }
+                    debug {
+                        applicationIdSuffix = ".debug"
+                        versionNameSuffix = "-DEBUG"
+                        isDebuggable = true
+                    }
+                }
+                packaging {
+                    resources.excludes.add("/META-INF/{AL2.0,LGPL2.1}")
+                }
+                compileOptions {
+                    isCoreLibraryDesugaringEnabled = true
+                }
+                dependencies {
+                    add("coreLibraryDesugaring", libs.findLibrary("desugarJdkLibs").get())
+                }
+            }
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/KmpLibraryConventionPlugin.kt
+================================================
+import com.android.build.api.dsl.androidLibrary
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+
+class KmpLibraryConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            pluginManager.apply("org.jetbrains.kotlin.multiplatform")
+            pluginManager.apply("com.android.kotlin.multiplatform.library")
+            pluginManager.apply("salvo.kmp.lint")
+
+            extensions.configure<KotlinMultiplatformExtension> {
+                androidLibrary {
+                    compileSdk = 36
+                    minSdk = 24
+                    compilerOptions {
+                        jvmTarget.set(JvmTarget.JVM_17)
+                    }
+                }
+                iosX64()
+                iosArm64()
+                iosSimulatorArm64()
+
+                explicitApi()
+
+                sourceSets.all {
+                    languageSettings.progressiveMode = true
+                }
+            }
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/LintConventionPlugin.kt
+================================================
+import io.github.stekl0.salvo.configureDetekt
+import io.github.stekl0.salvo.configureKtlint
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+
+class LintConventionPlugin : Plugin<Project> {
+    override fun apply(target: Project) {
+        with(target) {
+            pluginManager.apply("io.gitlab.arturbosch.detekt")
+            pluginManager.apply("org.jlleitschuh.gradle.ktlint")
+
+            configureDetekt()
+            configureKtlint()
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/io/github/stekl0/salvo/Detekt.kt
+================================================
+package io.github.stekl0.salvo
+
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
+
+internal fun Project.configureDetekt() {
+    extensions.configure<DetektExtension> {
+        toolVersion = "1.23.8"
+
+        source.setFrom(
+            "src/commonMain/kotlin",
+            "src/androidMain/kotlin",
+            "src/iosMain/kotlin",
+        )
+
+        buildUponDefaultConfig = true
+        allRules = false
+        parallel = true
+
+        config.setFrom(rootProject.files("config/detekt/detekt.yml"))
+
+        dependencies.add("detektPlugins", libs.findLibrary("detekt.composeRules").get())
+    }
+
+    tasks.withType<Detekt>().configureEach {
+        reports {
+            txt.required.set(false)
+            xml.required.set(false)
+            html.required.set(false)
+            md.required.set(false)
+            sarif.required.set(true)
+            sarif.outputLocation.set(file("build/reports/detekt/$name.sarif"))
+        }
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/io/github/stekl0/salvo/Ktlint.kt
+================================================
+package io.github.stekl0.salvo
+
+import org.gradle.api.Project
+import org.gradle.kotlin.dsl.configure
+import org.jlleitschuh.gradle.ktlint.KtlintExtension
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+
+internal fun Project.configureKtlint() {
+    extensions.configure<KtlintExtension> {
+        version.set("1.7.1")
+
+        reporters {
+            reporter(ReporterType.SARIF)
+        }
+
+        filter {
+            exclude("**/build/**")
+            exclude("**/generated/**")
+        }
+
+        android.set(true)
+
+        dependencies.add("ktlintRuleset", libs.findLibrary("ktlint.composeRules").get())
+
+        outputToConsole.set(true)
+    }
+}
+
+
+
+================================================
+FILE: build-logic/convention/src/main/kotlin/io/github/stekl0/salvo/ProjectExtensions.kt
+================================================
+package io.github.stekl0.salvo
+
+import org.gradle.api.Project
+import org.gradle.api.artifacts.VersionCatalog
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.kotlin.dsl.getByType
+
+val Project.libs
+    get(): VersionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+
+
+================================================
+FILE: composeApp/build.gradle.kts
+================================================
+plugins {
+    alias(libs.plugins.salvo.kmp.application)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
+}
+
+kotlin {
+    sourceSets {
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+        }
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+    }
+}
+
+android {
+    defaultConfig {
+        versionCode = 1
+        versionName = "1.0"
+    }
+}
+
+dependencies {
+    debugImplementation(compose.uiTooling)
+}
+
+
+
+================================================
+FILE: composeApp/src/androidMain/AndroidManifest.xml
+================================================
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity
+                android:exported="true"
+                android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+
+
+================================================
+FILE: composeApp/src/androidMain/kotlin/io/github/stekl0/salvo/MainActivity.kt
+================================================
+package io.github.stekl0.salvo
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        setContent {
+            App()
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun AppAndroidPreview() {
+    App()
+}
+
+
+
+================================================
+FILE: composeApp/src/androidMain/kotlin/io/github/stekl0/salvo/Platform.android.kt
+================================================
+@file:Suppress("MatchingDeclarationName")
+
+package io.github.stekl0.salvo
+
+import android.os.Build
+
+class AndroidPlatform : Platform {
+    override val name: String = "Android ${Build.VERSION.SDK_INT}"
+}
+
+actual fun getPlatform(): Platform = AndroidPlatform()
+
+
+
+================================================
+FILE: composeApp/src/androidMain/res/drawable/ic_launcher_background.xml
+================================================
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#3DDC84"
+        android:pathData="M0,0h108v108h-108z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M9,0L9,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,0L19,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,0L29,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,0L39,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,0L49,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,0L59,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,0L69,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,0L79,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M89,0L89,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M99,0L99,108"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,9L108,9"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,19L108,19"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,29L108,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,39L108,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,49L108,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,59L108,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,69L108,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,79L108,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,89L108,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,99L108,99"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,29L89,29"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,39L89,39"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,49L89,49"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,59L89,59"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,69L89,69"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M19,79L89,79"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M29,19L29,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M39,19L39,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,19L49,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M59,19L59,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M69,19L69,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M79,19L79,89"
+        android:strokeWidth="0.8"
+        android:strokeColor="#33FFFFFF" />
+</vector>
+
+
+================================================
+FILE: composeApp/src/androidMain/res/drawable-v24/ic_launcher_foreground.xml
+================================================
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="85.84757"
+                android:endY="92.4963"
+                android:startX="42.9492"
+                android:startY="49.59793"
+                android:type="linear">
+                <item
+                    android:color="#44000000"
+                    android:offset="0.0" />
+                <item
+                    android:color="#00000000"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="nonZero"
+        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
+        android:strokeWidth="1"
+        android:strokeColor="#00000000" />
+</vector>
+
+
+================================================
+FILE: composeApp/src/androidMain/res/mipmap-anydpi-v26/ic_launcher.xml
+================================================
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+
+
+================================================
+FILE: composeApp/src/androidMain/res/mipmap-anydpi-v26/ic_launcher_round.xml
+================================================
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>
+
+
+================================================
+FILE: composeApp/src/androidMain/res/values/strings.xml
+================================================
+<resources>
+    <string name="app_name">salvo</string>
+</resources>
+
+
+================================================
+FILE: composeApp/src/commonMain/composeResources/drawable/compose-multiplatform.xml
+================================================
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="450dp"
+    android:height="450dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+  <path
+      android:pathData="M56.25,18V46L32,60 7.75,46V18L32,4Z"
+      android:fillColor="#6075f2"/>
+  <path
+      android:pathData="m41.5,26.5v11L32,43V60L56.25,46V18Z"
+      android:fillColor="#6b57ff"/>
+  <path
+      android:pathData="m32,43 l-9.5,-5.5v-11L7.75,18V46L32,60Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:centerX="23.131"
+          android:centerY="18.441"
+          android:gradientRadius="42.132"
+          android:type="radial">
+        <item android:offset="0" android:color="#FF5383EC"/>
+        <item android:offset="0.867" android:color="#FF7F52FF"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <path
+      android:pathData="M22.5,26.5 L32,21 41.5,26.5 56.25,18 32,4 7.75,18Z">
+    <aapt:attr name="android:fillColor">
+      <gradient
+          android:startX="44.172"
+          android:startY="4.377"
+          android:endX="17.973"
+          android:endY="34.035"
+          android:type="linear">
+        <item android:offset="0" android:color="#FF33C3FF"/>
+        <item android:offset="0.878" android:color="#FF5383EC"/>
+      </gradient>
+    </aapt:attr>
+  </path>
+  <path
+      android:pathData="m32,21 l9.526,5.5v11L32,43 22.474,37.5v-11z"
+      android:fillColor="#000000"/>
+</vector>
+
+
+================================================
+FILE: composeApp/src/commonMain/kotlin/io/github/stekl0/salvo/App.kt
+================================================
+package io.github.stekl0.salvo
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import salvo.composeapp.generated.resources.Res
+import salvo.composeapp.generated.resources.compose_multiplatform
+
+@Composable
+fun App(modifier: Modifier = Modifier) {
+    MaterialTheme {
+        var showContent by remember { mutableStateOf(false) }
+        Column(
+            modifier =
+                modifier
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .safeContentPadding()
+                    .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Button(onClick = { showContent = !showContent }) {
+                Text("Click me!")
+            }
+            AnimatedVisibility(showContent) {
+                val greeting = remember { Greeting().greet() }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Image(painterResource(Res.drawable.compose_multiplatform), null)
+                    Text("Compose: $greeting")
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun AppPreview() {
+    App()
+}
+
+
+
+================================================
+FILE: composeApp/src/commonMain/kotlin/io/github/stekl0/salvo/Greeting.kt
+================================================
+package io.github.stekl0.salvo
+
+class Greeting {
+    private val platform = getPlatform()
+
+    fun greet(): String = "Hello, ${platform.name}!"
+}
+
+
+
+================================================
+FILE: composeApp/src/commonMain/kotlin/io/github/stekl0/salvo/Platform.kt
+================================================
+package io.github.stekl0.salvo
+
+interface Platform {
+    val name: String
+}
+
+expect fun getPlatform(): Platform
+
+
+
+================================================
+FILE: composeApp/src/commonTest/kotlin/io/github/stekl0/salvo/ComposeAppCommonTest.kt
+================================================
+package io.github.stekl0.salvo
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+class ComposeAppCommonTest {
+    @Test
+    fun example() {
+        assertEquals(3, 1 + 2)
+    }
+}
+
+
+
+================================================
+FILE: composeApp/src/iosMain/kotlin/io/github/stekl0/salvo/MainViewController.kt
+================================================
+package io.github.stekl0.salvo
+
+import androidx.compose.ui.window.ComposeUIViewController
+
+fun mainViewController() = ComposeUIViewController { App() }
+
+
+
+================================================
+FILE: composeApp/src/iosMain/kotlin/io/github/stekl0/salvo/Platform.ios.kt
+================================================
+@file:Suppress("MatchingDeclarationName")
+
+package io.github.stekl0.salvo
+
+import platform.UIKit.UIDevice
+
+class IOSPlatform : Platform {
+    override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
+}
+
+actual fun getPlatform(): Platform = IOSPlatform()
+
+
+
+================================================
+FILE: config/detekt/detekt.yml
+================================================
+config:
+  validation: true
+
+naming:
+  FunctionNaming:
+    active: true
+    ignoreAnnotated:
+      - Composable
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][A-Za-z0-9]*'
+
+complexity:
+  LongParameterList:
+    active: true
+    functionThreshold: 10
+    ignoreDefaultParameters: true
+  TooManyFunctions:
+    active: true
+    ignoreAnnotatedFunctions:
+      - Preview
+
+style:
+  MagicNumber:
+    active: true
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated:
+      - Preview
+
+Compose:
+  ComposableAnnotationNaming:
+    active: true
+  ComposableNaming:
+    active: true
+    # -- You can optionally disable the checks in this rule for regex matches against the composable name (e.g. molecule presenters)
+    # allowedComposableFunctionNames: .*Presenter,.*MoleculePresenter
+  ComposableParamOrder:
+    active: true
+    # -- You can optionally have a list of types to be treated as lambdas (e.g. typedefs or fun interfaces not picked up automatically)
+    # treatAsLambda: MyLambdaType
+  CompositionLocalAllowlist:
+    active: true
+    # -- You can optionally define a list of CompositionLocals that are allowed here
+    # allowedCompositionLocals: LocalSomething,LocalSomethingElse
+  CompositionLocalNaming:
+    active: true
+  ContentEmitterReturningValues:
+    active: true
+    # -- You can optionally add your own composables here
+    # contentEmitters: MyComposable,MyOtherComposable
+  ContentTrailingLambda:
+    active: true
+    # -- You can optionally have a list of types to be treated as lambdas (e.g. typedefs or fun interfaces not picked up automatically)
+    # treatAsLambda: MyLambdaType
+    # -- You can optionally have a list of types to be treated as composable lambdas (e.g. typedefs or fun interfaces not picked up automatically).
+    # -- The difference with treatAsLambda is that those need `@Composable` MyLambdaType in the definition, while these won't.
+    # treatAsComposableLambda: MyComposableLambdaType
+  ContentSlotReused:
+      active: true
+      # -- You can optionally have a list of types to be treated as composable lambdas (e.g. typedefs or fun interfaces not picked up automatically).
+      # -- The difference with treatAsLambda is that those need `@Composable` MyLambdaType in the definition, while these won't.
+      # treatAsComposableLambda: MyComposableLambdaType
+  DefaultsVisibility:
+    active: true
+  LambdaParameterEventTrailing:
+    active: true
+    # -- You can optionally add your own composables here
+    # contentEmitters: MyComposable,MyOtherComposable
+    # -- You can add composables here that you don't want to count as content emitters (e.g. custom dialogs or modals)
+    # contentEmittersDenylist: MyNonEmitterComposable
+  LambdaParameterInRestartableEffect:
+    active: true
+    # -- You can optionally have a list of types to be treated as lambdas (e.g. typedefs or fun interfaces not picked up automatically)
+    # treatAsLambda: MyLambdaType
+  Material2:
+    active: false # Opt-in, disabled by default. Turn on if you want to disallow Material 2 usages.
+    # -- You can optionally allow parts of it, if you are in the middle of a migration.
+    # allowedFromM2: icons.Icons,TopAppBar
+  ModifierClickableOrder:
+    active: true
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+  ModifierComposed:
+    active: true
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+  ModifierMissing:
+    active: true
+    # -- You can optionally control the visibility of which composables to check for here
+    # -- Possible values are: `only_public`, `public_and_internal` and `all` (default is `only_public`)
+    # checkModifiersForVisibility: only_public
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+    # -- You can suppress this check in functions annotated with these annotations
+    # ignoreAnnotated: ['Potato', 'Banana']
+  ModifierNaming:
+    active: true
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+  ModifierNotUsedAtRoot:
+    active: true
+    # -- You can optionally add your own composables here
+    # contentEmitters: MyComposable,MyOtherComposable
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+  ModifierReused:
+    active: true
+    # -- You can optionally add your own Modifier types
+    # customModifiers: BananaModifier,PotatoModifier
+  ModifierWithoutDefault:
+    active: true
+  MultipleEmitters:
+    active: true
+    # -- You can optionally add your own composables here that will count as content emitters
+    # contentEmitters: MyComposable,MyOtherComposable
+    # -- You can add composables here that you don't want to count as content emitters (e.g. custom dialogs or modals)
+    # contentEmittersDenylist: MyNonEmitterComposable
+  MutableParams:
+    active: true
+  MutableStateAutoboxing:
+    active: true
+  MutableStateParam:
+    active: true
+  ParameterNaming:
+    active: true
+    # -- You can optionally have a list of types to be treated as lambdas (e.g. typedefs or fun interfaces not picked up automatically)
+    # treatAsLambda: MyLambdaType
+    # -- You can optionally add your allowed lambda names (e.g., usages from the past found in the official Compose code)
+    # allowedLambdaParameterNames: onSizeChanged, onGloballyPositioned
+  PreviewAnnotationNaming:
+    active: true
+  PreviewNaming:
+    active: false # Opt-in, disabled by default.
+    # -- You can optionally configure the naming strategy for previews.
+    # -- Possible values are: `suffix`, `prefix`, `anywhere`. By default, it will be `suffix`.
+    # previewNamingStrategy: suffix
+  PreviewPublic:
+    active: true
+  RememberMissing:
+    active: true
+  RememberContentMissing:
+    active: true
+  UnstableCollections:
+    active: false # Opt-in, disabled by default. Turn on if you want to enforce this (e.g. you have strong skipping disabled)
+  ViewModelForwarding:
+    active: true
+    # -- You can optionally use this rule on things other than types ending in "ViewModel" or "Presenter" (which are the defaults). You can add your own via a regex here:
+    # allowedStateHolderNames: .*ViewModel,.*Presenter
+    # -- You can optionally add an allowlist for Composable names that won't be affected by this rule
+    # allowedForwarding: .*Content,.*FancyStuff
+    # -- You can optionally add an allowlist for ViewModel/StateHolder names that won't be affected by this rule
+    # allowedForwardingOfTypes: PotatoViewModel,(Apple|Banana)ViewModel,.*FancyViewModel
+  ViewModelInjection:
+    active: true
+    # -- You can optionally add your own ViewModel factories here
+    # viewModelFactories: hiltViewModel,potatoViewModel
+
+
+
+================================================
+FILE: gradle/libs.versions.toml
+================================================
+[versions]
+agp = "8.11.1"
+androidx-activity = "1.10.1"
+androidx-appcompat = "1.7.1"
+androidx-core = "1.17.0"
+androidx-espresso = "3.7.0"
+androidx-lifecycle = "2.9.3"
+androidx-testExt = "1.3.0"
+composeMultiplatform = "1.8.2"
+junit = "4.13.2"
+kotlin = "2.2.10"
+ktlint = "13.1.0"
+detekt = "1.23.8"
+composeRules = "0.4.27"
+composeGradlePlugin = "1.8.2"
+desugarJdk = "2.1.5"
+
+[libraries]
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-testExt-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-testExt" }
+androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-espresso" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
+androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+desugarJdkLibs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdk"}
+
+# Compose Rules
+detekt-composeRules = { module = "io.nlopez.compose.rules:detekt", version.ref = "composeRules" }
+ktlint-composeRules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "composeRules" }
+
+# Dependencies of the included build-logic
+android-gradleApiPlugin = { group = "com.android.tools.build", name = "gradle-api", version.ref = "agp" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+detekt-gradlePlugin = { group = "io.gitlab.arturbosch.detekt", name = "detekt-gradle-plugin", version.ref = "detekt" }
+ktlint-gradlePlugin = { group = "org.jlleitschuh.gradle", name = "ktlint-gradle", version.ref = "ktlint" }
+compose-gradlePlugin = { group = "org.jetbrains.compose", name = "compose-gradle-plugin", version.ref = "composeGradlePlugin" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+android-kotlinMultiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+
+# Plugins defined by this project
+salvo-kmp-application = { id = "salvo.kmp.application" }
+salvo-kmp-library = { id = "salvo.kmp.library" }
+salvo-lint = { id = "salvo.lint" }
+
+
+================================================
+FILE: gradle/wrapper/gradle-wrapper.properties
+================================================
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+
+
+
+================================================
+FILE: iosApp/Configuration/Config.xcconfig
+================================================
+TEAM_ID=
+
+PRODUCT_NAME=salvo
+PRODUCT_BUNDLE_IDENTIFIER=io.github.stekl0.salvo.salvo$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
+
+
+================================================
+FILE: iosApp/iosApp/ContentView.swift
+================================================
+import UIKit
+import SwiftUI
+import ComposeApp
+
+struct ComposeView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.MainViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+struct ContentView: View {
+    var body: some View {
+        ComposeView()
+            .ignoresSafeArea()
+    }
+}
+
+
+
+
+
+
+================================================
+FILE: iosApp/iosApp/Info.plist
+================================================
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+</dict>
+</plist>
+
+
+
+================================================
+FILE: iosApp/iosApp/iOSApp.swift
+================================================
+import SwiftUI
+
+@main
+struct iOSApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+
+
+================================================
+FILE: iosApp/iosApp/Assets.xcassets/Contents.json
+================================================
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+
+
+
+================================================
+FILE: iosApp/iosApp/Assets.xcassets/AccentColor.colorset/Contents.json
+================================================
+{
+  "colors" : [
+    {
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+
+
+
+================================================
+FILE: iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json
+================================================
+{
+  "images" : [
+    {
+      "filename" : "app-icon-1024.png",
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "tinted"
+        }
+      ],
+      "idiom" : "universal",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+
+
+
+================================================
+FILE: iosApp/iosApp/Preview Content/Preview Assets.xcassets/Contents.json
+================================================
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+
+
+
+================================================
+FILE: .github/workflows/ci.yml
+================================================
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Check & assemble
+        run: ./gradlew --stacktrace check assembleDebug
+
+
